@@ -3,30 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Auditor di Race Condition nell'Aggiornamento di WordPress &amp; RCE | TAVARDT Italia</title>
-  <meta name="description" content="Verifica la resilienza del tuo sito WordPress contro le vulnerabilità di Race Condition durante gli aggiornamenti, l'esposizione di wp-content/upgrade/ e i rischi RCE.">
+  <title>Guida di Hardening &amp; Mitigazione: WordPress Upgrade Race Condition | TAVARDT Italia</title>
+  <meta name="description" content="Guida tecnica di architettura difensiva, regole perimetrali di immunizzazione contro RCE e strumento CLI per l'audit di race condition in WordPress.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/">
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
   <link rel="shortcut icon" href="./favicon.ico">
   
-  <!-- Open Graph -->
-  <meta property="og:title" content="Auditor di Race Condition nell'Aggiornamento di WordPress &amp; RCE | TAVARDT Italia">
-  <meta property="og:description" content="Verifica la resilienza del tuo sito WordPress contro le vulnerabilità di Race Condition durante gli aggiornamenti, l'esposizione di wp-content/upgrade/ e i rischi RCE.">
+  <meta property="og:title" content="Guida di Hardening &amp; Mitigazione: WordPress Upgrade Race Condition | TAVARDT Italia">
+  <meta property="og:description" content="Riferimento tecnico contro la Race Condition negli aggiornamenti di WordPress, esposizione di wp-content/upgrade/ ed esecuzione di codice da remoto.">
   <meta property="og:image" content="https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Auditor di Race Condition nell'Aggiornamento di WordPress &amp; RCE | TAVARDT Italia">
+  <meta property="og:image:alt" content="Guida di Hardening WordPress Upgrade Race Condition | TAVARDT Italia">
   <meta property="og:url" content="https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="it_IT">
   
-  <!-- AEO & GEO Tags -->
   <meta name="ai-content-declaration" content="citable-security-tool">
   <meta name="geo.region" content="IT">
   <meta name="geo.placename" content="Italia">
   
-  <!-- Google Tag Manager -->
   <link rel="preconnect" href="https://www.googletagmanager.com">
   <link rel="dns-prefetch" href="https://www.googletagmanager.com">
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -34,602 +31,1298 @@
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-WXXHJ2TV');</script>
-  
-  <!-- JSON-LD Schema: WebApplication & FAQPage -->
+
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebApplication",
-        "name": "Auditor di Race Condition nell'Aggiornamento di WordPress & RCE | TAVARDT Italia",
-        "url": "https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/",
-        "description": "Strumento di audit di sicurezza per valutare la resilienza contro l'esposizione della cartella wp-content/upgrade/ e i rischi RCE in WordPress.",
-        "applicationCategory": "SecurityApplication",
-        "operatingSystem": "All",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "EUR"
-        },
-        "creator": {
-          "@type": "Organization",
-          "name": "TAVARDT Italia",
-          "url": "https://ag.tavardt.com/it/"
-        }
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/#webapp",
+      "url": "https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/",
+      "name": "Guida di Hardening & Mitigazione: WordPress Upgrade Race Condition | TAVARDT Italia",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Linux, Unix, Cloud Edge, WordPress",
+      "description": "Centro tecnico aziendale per la mitigazione delle vulnerabilità di Race Condition durante l'estrazione dei pacchetti e l'esecuzione di PHP in wp-content/upgrade/.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
       },
-      {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Comment fonctionne la vulnérabilité de condition de concurrence dans WordPress ?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Durante l'aggiornamento di un plugin, WordPress estrae l'archivio ZIP in wp-content/upgrade/. Durante i millisecondi che precedono lo spostamento finale, una richiesta concorrente rapida può invocare uno script PHP appena estratto se il server web non ne blocca l'esecuzione."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Perché vietare l'esecuzione di PHP in wp-content/upgrade/ è indispensabile?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Le cartelle destinate a dati statici e temporanei non devono in alcun caso compilare script. Bloccare l'esecuzione di PHP impedisce a qualsiasi payload malevolo o web shell di essere elaborato dal server web."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Che cos'è la direttiva WP_TEMP_DIR e come elimina completamente questo rischio?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "La costante WP_TEMP_DIR in wp-config.php stabilisce il percorso fisico in cui WordPress scompatta i file temporanei. Impostandola al di fuori della radice pubblica DocumentRoot, nessun visitatore esterno può raggiungere i file tramite HTTP."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Il WAF di Cloudflare può neutralizzare questo tentativo di attacco?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sì. Una regola personalizzata WAF configurata per bloccare qualsiasi richiesta diretta a /wp-content/upgrade/ neutralizza il tentativo sul perimetro della rete prima che raggiunga il server di origine."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Qual è la differenza tra l'audit online e l'utility da riga di comando?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Lo strumento web nel browser esegue una verifica di connettività perimetrale e di latenza nell'ambito di sicurezza del client. Lo script Python da terminale effettua un'ispezione tecnica approfondita dei codici di stato HTTP, delle intestazioni e delle restrizioni di esecuzione."
-            }
-          }
-        ]
+      "publisher": {
+        "@type": "Organization",
+        "name": "TAVARDT Italia",
+        "url": "https://ag.tavardt.com/it/",
+        "logo": "https://ag.tavardt.com/img/tavardt-og.png"
       }
-    ]
-  }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Come funziona la vulnerabilità di Race Condition nell'aggiornamento di WordPress?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Durante l'aggiornamento del core, dei temi o dei plugin, WordPress estrae temporaneamente gli archivi ZIP in wp-content/upgrade/. Se il server consente l'esecuzione diretta di PHP in tale cartella, esiste una finestra di concorrenza in cui un aggressore può richiedere i file appena estratti prima del completamento delle verifiche e della cancellazione, ottenendo l'esecuzione remota di codice."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Perché è fondamentale bloccare i file PHP in wp-content/upgrade/?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La cartella di upgrade è destinata unicamente all'estrazione temporanea di file. Nessuno script PHP in wp-content/upgrade/ deve essere accessibile direttamente via HTTP. Bloccare l'esecuzione impedisce che condizioni di concorrenza o file residui fungano da web shell attive."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Cos'è la direttiva WP_TEMP_DIR e come neutralizza questa vulnerabilità?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La direttiva WP_TEMP_DIR in wp-config.php stabilisce un percorso del sistema operativo esterno alla radice web pubblica (come /var/www/tmp/). Spostare i file temporanei all'esterno della DocumentRoot rende fisicamente impossibile per un utente remoto raggiungerli o eseguirli via richieste HTTP."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Cloudflare WAF è in grado di proteggere WordPress da questo attacco?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sì. Una regola WAF personalizzata in Cloudflare che blocca qualsiasi richiesta contenente nel percorso URI wp-content/upgrade/ intercetta e scarta i tentativi di exploit al perimetro globale prima che raggiungano il server di origine."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Come possono gli amministratori eseguire verifiche nel proprio ambiente?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Lo script ufficiale audit_wp_race.py per CLI fornito in questa pagina consente di condurre audit deterministici direttamente da terminale o pipeline CI/CD, al riparo da limitazioni CORS o sandbox del browser."
+          }
+        }
+      ]
+    }
+  ]
+}
   </script>
 
   <style>
-  :root {
-    --bg: #030712;
-    --surface: #0b1120;
-    --surface-card: #0f172a;
-    --surface-hover: #1e293b;
-    --primary: #1e00ff;
-    --primary-hover: #1700cc;
-    --accent: #38bdf8;
-    --text: #f8fafc;
-    --text-muted: #94a3b8;
-    --text-subtle: #64748b;
-    --border: #1e293b;
-    --danger: #ef4444;
-    --danger-bg: rgba(239, 68, 68, 0.12);
-    --danger-border: rgba(239, 68, 68, 0.3);
-    --success: #10b981;
-    --success-bg: rgba(16, 185, 129, 0.12);
-    --success-border: rgba(16, 185, 129, 0.3);
-    --warning: #f59e0b;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: #030712;
+    color: #f8fafc;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background-color: var(--bg); color: var(--text); font-family: var(--font-sans); line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+  header.tavardt-header {
+    width: 100% !important;
+    display: block !important;
+    background: rgba(5, 5, 16, 0.95) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .tavardt-header-inner {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 16px 24px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+  .tavardt-brand {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    text-decoration: none !important;
+    color: #ffffff !important;
+    margin: 0 !important;
+  }
+  .tavardt-logo-text {
+    font-size: 1.35rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+    color: #ffffff !important;
+  }
+  .tavardt-brand-dot {
+    color: #1e00ff !important;
+    font-weight: 900 !important;
+  }
+  .tavardt-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 24px !important;
+    margin: 0 !important;
+  }
+  .tavardt-nav-link {
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    font-size: 0.88rem !important;
+    font-weight: 500 !important;
+    transition: color 0.2s ease !important;
+  }
+  .tavardt-nav-link:hover {
+    color: #839bc8 !important;
+  }
 
-  .tavardt-header { border-bottom: 1px solid var(--border); background: rgba(11, 17, 32, 0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; width: 100%; }
-  .tavardt-header-inner { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-  .tavardt-logo { font-size: 1.25rem; font-weight: 800; color: #ffffff; text-decoration: none; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
-  .tavardt-logo span { color: var(--primary); }
-  .tavardt-nav { display: flex; gap: 20px; }
-  .tavardt-nav a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s ease; }
-  .tavardt-nav a:hover { color: #ffffff; }
+  .tavardt-main {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+    box-sizing: border-box;
+  }
 
-  .tavardt-main { flex: 1; max-width: 1000px; width: 100%; margin: 0 auto; padding: 48px 24px 64px; display: flex; flex-direction: column; align-items: center; }
-  .hero-section { text-align: center; margin-bottom: 40px; width: 100%; }
-  .badge-category { display: inline-block; padding: 6px 16px; border-radius: 9999px; background: rgba(30, 0, 255, 0.15); border: 1px solid rgba(30, 0, 255, 0.4); color: #839bc8; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 20px; }
-  .hero-title { font-size: 2.35rem; font-weight: 800; color: #ffffff; line-height: 1.25; margin-bottom: 16px; letter-spacing: -0.03em; }
-  .hero-subtitle { font-size: 1.05rem; color: var(--text-muted); max-width: 760px; margin: 0 auto 32px; line-height: 1.6; }
+  .hero-section {
+    text-align: center;
+    margin-bottom: 36px;
+    width: 100%;
+  }
+  .hero-title {
+    font-size: 2.3rem;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin-bottom: 14px;
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: #94a3b8;
+    max-width: 860px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
 
-  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; width: 100%; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); margin-bottom: 36px; }
-  .scanner-form { display: flex; gap: 12px; width: 100%; }
-  .scanner-input-wrap { flex: 1; position: relative; }
-  .scanner-input { width: 100%; background: #030712; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; color: #ffffff; font-family: var(--font-mono); font-size: 0.95rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-  .scanner-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(30, 0, 255, 0.25); }
-  .btn-audit { background: var(--primary); color: #ffffff; border: none; border-radius: 8px; padding: 14px 28px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
-  .btn-audit:hover { background: var(--primary-hover); transform: translateY(-1px); }
-  .btn-audit:active { transform: translateY(0); }
-  .btn-audit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .cli-hero-box {
+    background: #0b101e;
+    border: 1px solid rgba(30, 0, 255, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .cli-header {
+    background: #0f172a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .cli-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .cli-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .cli-dot.red { background: #ef4444; }
+  .cli-dot.yellow { background: #f59e0b; }
+  .cli-dot.green { background: #10b981; }
+  .cli-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: 0.02em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  .cli-copy-btn {
+    background: #1e00ff;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .cli-copy-btn:hover {
+    background: #2a0fff;
+    box-shadow: 0 0 16px rgba(30, 0, 255, 0.6);
+  }
+  .cli-body {
+    padding: 24px;
+  }
+  .cli-desc {
+    font-size: 0.92rem;
+    color: #94a3b8;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .cli-code-terminal {
+    background: #030712;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.86rem;
+    color: #38bdf8;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    white-space: pre;
+  }
+  .cli-tags {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .cli-tag {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px 10px;
+    border-radius: 4px;
+  }
+  .cli-tag strong {
+    color: #ffffff;
+  }
 
-  .demo-actions { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 18px; flex-wrap: wrap; }
-  .demo-label { font-size: 0.82rem; color: var(--text-subtle); }
-  .btn-demo { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-  .btn-demo:hover { border-color: rgba(255, 255, 255, 0.25); color: #ffffff; background: var(--surface-hover); }
+  .matrix-section {
+    margin-bottom: 48px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .matrix-title {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .matrix-subtitle {
+    font-size: 0.95rem;
+    color: #94a3b8;
+    text-align: center;
+    max-width: 780px;
+    margin: 0 auto 24px;
+  }
+  .matrix-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .matrix-tab-btn {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .matrix-tab-btn:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  .matrix-tab-btn.active.vuln {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: #ef4444;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+  }
+  .matrix-tab-btn.active.hard {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-color: #10b981;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+  }
 
-  .scan-progress { display: none; margin-top: 20px; padding: 16px; background: #030712; border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; }
-  .progress-log { display: flex; flex-direction: column; gap: 6px; }
-  .log-line { color: var(--text-muted); }
-  .log-line.active { color: var(--accent); }
-  .log-line.done { color: var(--success); }
-  .log-line.warn { color: var(--warning); }
-  .log-line.crit { color: var(--danger); }
+  .diagnostic-card {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 28px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .posture-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }
+  .posture-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .posture-badge {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .badge-vuln {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .badge-hardened {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+  .posture-mode-tag {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+  .posture-summary {
+    font-size: 0.95rem;
+    color: #e2e8f0;
+    line-height: 1.65;
+  }
 
-  .results-section { display: none; width: 100%; flex-direction: column; gap: 24px; margin-bottom: 48px; }
-  .diagnostic-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 100%; box-sizing: border-box; }
-  .diag-top { display: flex; align-items: center; gap: 28px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-  .gauge-circle { width: 110px; height: 110px; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 6px solid var(--danger); font-size: 2.2rem; font-weight: 800; color: #ffffff; background: rgba(0, 0, 0, 0.3); flex-shrink: 0; }
-  .gauge-circle span { font-size: 0.65rem; font-weight: 700; color: var(--text-subtle); letter-spacing: 0.08em; }
-  .posture-info { flex: 1; }
-  .posture-target-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle); margin-bottom: 4px; }
-  .posture-target-url { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 700; color: #ffffff; margin-bottom: 10px; word-break: break-all; }
-  .target-url-text { display: inline-block; word-break: break-all; }
-  .target-url-sub { display: inline-block; font-size: 0.88rem; font-weight: 500; color: #94a3b8; margin-left: 6px; }
-  .posture-badge { display: inline-block; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.04em; }
-  .badge-hardened { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
-  .badge-vuln { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
-  .posture-summary { font-size: 0.92rem; color: var(--text-muted); line-height: 1.5; }
+  .routes-box {
+    background: #131c31;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .routes-header {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 14px 20px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .routes-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .routes-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+  .routes-table th {
+    text-align: left;
+    padding: 12px 20px;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+  }
+  .routes-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+  .routes-table tr:last-child td {
+    border-bottom: none;
+  }
+  .route-path {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #ffffff;
+    font-weight: 600;
+  }
+  .status-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .status-tag.danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
+  .status-tag.safe {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
 
-  .routes-box { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; width: 100%; box-sizing: border-box; }
-  .routes-header { background: rgba(0, 0, 0, 0.25); padding: 14px 20px; font-weight: 700; font-size: 0.92rem; color: #ffffff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .routes-table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .routes-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.86rem; }
-  .routes-table th { text-align: left; padding: 12px 20px; color: var(--text-subtle); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .routes-table td { padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: var(--text-muted); white-space: nowrap; }
-  .routes-table tr:last-child td { border-bottom: none; }
-  .route-path { font-family: var(--font-mono); color: #ffffff; font-weight: 600; }
-  .status-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
-  .status-tag.danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
-  .status-tag.safe { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .findings-box {
+    background: #131c31;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 28px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .findings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 0.92rem;
+    margin-bottom: 14px;
+  }
+  .findings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .finding-item {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    border-radius: 6px;
+    line-height: 1.45;
+  }
+  .finding-item.ok {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+  }
+  .finding-item.crit {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+  }
 
-  .findings-box { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 24px; width: 100%; box-sizing: border-box; }
-  .findings-header { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.92rem; margin-bottom: 14px; }
-  .findings-list { display: flex; flex-direction: column; gap: 8px; }
-  .finding-item { font-size: 0.85rem; padding: 10px 14px; border-radius: 6px; line-height: 1.45; }
-  .finding-item.ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
-  .finding-item.crit { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+  .code-section-intro {
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .code-section-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .code-section-subtitle {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
 
-  .code-section { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; width: 100%; box-sizing: border-box; }
-  .code-tabs-header { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--border); padding: 10px 16px; gap: 12px; }
-  .code-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-  .code-tab { background: transparent; border: none; color: var(--text-muted); padding: 8px 14px; font-size: 0.82rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-  .code-tab:hover { color: #ffffff; background: var(--surface-hover); }
-  .code-tab.active { color: #ffffff; background: var(--primary); }
+  .code-section {
+    background: #131c31;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .code-tabs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 16px;
+    gap: 12px;
+  }
+  .code-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .code-tab {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .code-tab:hover {
+    color: #ffffff;
+    background: #1e293b;
+  }
+  .code-tab.active {
+    color: #ffffff;
+    background: #1e00ff;
+  }
+  .code-select-mobile {
+    display: none;
+    background: #030712;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+    max-width: 240px;
+  }
+  .code-actions button {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .code-actions button:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  .code-block {
+    padding: 20px;
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+    background: #030712;
+  }
 
-  .code-select-mobile { display: none; background: #030712; color: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 0.84rem; font-weight: 600; font-family: var(--font-sans); outline: none; cursor: pointer; flex: 1; max-width: 240px; }
-  .code-actions button { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 14px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
-  .code-actions button:hover { color: #ffffff; border-color: rgba(255, 255, 255, 0.25); }
-  .code-block { padding: 20px; margin: 0; font-family: var(--font-mono); font-size: 0.82rem; color: #e2e8f0; line-height: 1.55; overflow-x: auto; white-space: pre; background: #030712; }
+  .aeo-section {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 36px;
+    margin-bottom: 48px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .aeo-badge {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #839bc8;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    text-align: center;
+    display: block;
+    line-height: 1.5;
+  }
+  .mobile-only {
+    display: none;
+  }
+  .aeo-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    text-align: center;
+  }
+  .aeo-content p {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: #94a3b8;
+    margin-bottom: 16px;
+  }
+  .aeo-content p:last-child {
+    margin-bottom: 0;
+  }
+  .aeo-content strong {
+    color: #ffffff;
+    font-weight: 700;
+  }
 
-  .aeo-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 36px; margin-bottom: 48px; width: 100%; box-sizing: border-box; }
-  .aeo-badge { font-size: 0.75rem; font-weight: 800; color: #839bc8 !important; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; text-align: center; display: block; }
-  .aeo-title { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 20px; line-height: 1.3; text-align: center; }
-  .aeo-content p { font-size: 0.95rem; line-height: 1.75; color: var(--text-muted); margin-bottom: 16px; }
-  .aeo-content p:last-child { margin-bottom: 0; }
-  .aeo-content strong { color: #ffffff; font-weight: 700; }
+  .geo-section {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 36px;
+    margin-bottom: 48px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .geo-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  .geo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .geo-col {
+    background: #131c31;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  .geo-col.vuln { border-top: 4px solid #ef4444; }
+  .geo-col.hardened { border-top: 4px solid #10b981; }
+  .geo-col-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: #ffffff;
+  }
+  .geo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+  }
+  .geo-list li {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .geo-list .cross { color: #ef4444; font-weight: 900; }
+  .geo-list .check { color: #10b981; font-weight: 900; }
 
-  .geo-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 36px; margin-bottom: 48px; width: 100%; box-sizing: border-box; }
-  .geo-title { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 24px; text-align: center; }
-  .geo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  @media (max-width: 768px) { .geo-grid { grid-template-columns: 1fr; } }
-  .geo-col { background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
-  .geo-col.vuln { border-top: 4px solid var(--danger); }
-  .geo-col.hardened { border-top: 4px solid var(--success); }
-  .geo-col-title { font-size: 1.05rem; font-weight: 800; margin-bottom: 16px; color: #ffffff; }
-  .geo-list { list-style: none; display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0; }
-  .geo-list li { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; display: flex; align-items: flex-start; gap: 10px; }
-  .geo-list .cross { color: var(--danger); font-weight: 900; }
-  .geo-list .check { color: var(--success); font-weight: 900; }
+  .faq-section {
+    margin-bottom: 48px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .faq-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .faq-item {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .faq-question {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 18px 24px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: color 0.2s ease;
+  }
+  .faq-question:hover {
+    color: #38bdf8;
+  }
+  .faq-icon {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #64748b;
+    transition: transform 0.2s ease;
+  }
+  .faq-item.active .faq-icon {
+    transform: rotate(45deg);
+  }
+  .faq-answer {
+    display: none;
+    padding: 0 24px 18px;
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.7;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .faq-item.active .faq-answer {
+    display: block;
+  }
 
-  .faq-section { margin-bottom: 48px; width: 100%; box-sizing: border-box; }
-  .faq-title { font-size: 1.4rem; font-weight: 800; color: #ffffff; margin-bottom: 20px; text-align: center; }
-  .faq-list { display: flex; flex-direction: column; gap: 12px; }
-  .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .faq-question { width: 100%; background: transparent; border: none; padding: 18px 24px; color: #ffffff; font-size: 0.95rem; font-weight: 600; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; transition: color 0.2s ease; }
-  .faq-question:hover { color: var(--accent); }
-  .faq-icon { font-size: 1.2rem; font-weight: 400; color: var(--text-subtle); transition: transform 0.2s ease; }
-  .faq-item.active .faq-icon { transform: rotate(45deg); }
-  .faq-answer { display: none; padding: 0 24px 18px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; border-top: 1px solid rgba(255, 255, 255, 0.04); }
-  .faq-item.active .faq-answer { display: block; }
+  .cta-card {
+    width: 100% !important;
+    background: linear-gradient(135deg, rgba(30, 0, 255, 0.2) 0%, rgba(11, 16, 30, 0.9) 100%) !important;
+    border: 1px solid rgba(30, 0, 255, 0.4) !important;
+    border-radius: 16px !important;
+    padding: 36px 32px !important;
+    text-align: center !important;
+    margin: 36px 0 !important;
+    box-sizing: border-box !important;
+  }
+  .cta-card h3 {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 10px !important;
+    color: #ffffff !important;
+    text-align: center !important;
+  }
+  .cta-card p {
+    color: #94a3b8 !important;
+    max-width: 720px !important;
+    margin: 0 auto 24px !important;
+    font-size: 0.98rem !important;
+    line-height: 1.6 !important;
+    text-align: center !important;
+  }
+  .cta-btns {
+    display: flex !important;
+    gap: 16px !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+  }
+  .btn-wa {
+    background: #1e00ff !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    font-weight: 700 !important;
+    padding: 14px 32px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 0 25px rgba(30, 0, 255, 0.6) !important;
+    transition: all 0.2s !important;
+    display: inline-block !important;
+    font-size: 0.95rem !important;
+  }
+  .btn-wa:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 0 35px rgba(30, 0, 255, 0.9) !important;
+  }
+  .btn-corp {
+    background: #0b101e !important;
+    color: #f8fafc !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    padding: 14px 28px !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    display: inline-block !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s !important;
+  }
+  .btn-corp:hover {
+    background: #151d33 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
 
-  .cta-card { width: 100% !important; background: linear-gradient(135deg, rgba(30, 0, 255, 0.2) 0%, rgba(11, 16, 30, 0.9) 100%) !important; border: 1px solid rgba(30, 0, 255, 0.4) !important; border-radius: 16px !important; padding: 36px 32px !important; text-align: center !important; margin: 36px 0 !important; box-sizing: border-box !important; }
-  .cta-card h3 { font-size: 1.35rem !important; font-weight: 800 !important; margin-bottom: 10px !important; color: #ffffff !important; text-align: center !important; }
-  .cta-card p { color: #94a3b8 !important; max-width: 720px !important; margin: 0 auto 24px !important; font-size: 0.98rem !important; line-height: 1.6 !important; text-align: center !important; }
-  .cta-btns { display: flex !important; gap: 16px !important; justify-content: center !important; flex-wrap: wrap !important; }
-  .btn-wa { background: #1e00ff !important; color: #ffffff !important; text-decoration: none !important; font-weight: 700 !important; padding: 14px 32px !important; border-radius: 9999px !important; box-shadow: 0 0 25px rgba(30, 0, 255, 0.6) !important; transition: all 0.2s !important; display: inline-block !important; font-size: 0.95rem !important; }
-  .btn-wa:hover { transform: translateY(-2px) !important; box-shadow: 0 0 35px rgba(30, 0, 255, 0.9) !important; }
-  .btn-corp { background: #0b101e !important; color: #f8fafc !important; text-decoration: none !important; font-weight: 600 !important; padding: 14px 28px !important; border-radius: 9999px !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; display: inline-block !important; font-size: 0.95rem !important; }
-  .btn-corp:hover { background: #151d33 !important; border-color: rgba(255, 255, 255, 0.2) !important; }
+  .tavardt-footer {
+    width: 100% !important;
+    background: #050510 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-top: 56px !important;
+    color: #94a3b8 !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-inner {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 48px 24px 32px !important;
+    display: grid !important;
+    grid-template-columns: 2fr 1fr 1.5fr !important;
+    gap: 40px !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    text-align: left !important;
+    align-items: flex-start !important;
+  }
+  .tavardt-footer-logo {
+    font-size: 1.4rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    margin-bottom: 12px !important;
+    letter-spacing: -0.03em !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-mission {
+    font-size: 0.88rem !important;
+    line-height: 1.6 !important;
+    color: #94a3b8 !important;
+    margin-bottom: 16px !important;
+    max-width: 440px !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-heading {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: #ffffff !important;
+    margin-bottom: 16px !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-links {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-links a {
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    font-size: 0.88rem !important;
+    transition: color 0.2s ease !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-links a:hover {
+    color: #839bc8 !important;
+  }
+  .tavardt-footer-compliance-text {
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+    color: #94a3b8 !important;
+    text-align: left !important;
+  }
+  .tavardt-footer-bottom {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 20px 24px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    text-align: center !important;
+    font-size: 0.82rem !important;
+    color: #64748b !important;
+  }
+  .tavardt-footer-bottom p {
+    text-align: center !important;
+    margin: 0 auto !important;
+  }
 
-  .tavardt-footer { width: 100% !important; background: #050510 !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; margin-top: 56px !important; color: #94a3b8 !important; text-align: left !important; }
-  .tavardt-footer-inner { max-width: 1200px !important; margin: 0 auto !important; padding: 48px 24px 32px !important; display: grid !important; grid-template-columns: 2fr 1fr 1.5fr !important; gap: 40px !important; text-align: left !important; }
-  .tavardt-footer-col { display: flex !important; flex-direction: column !important; gap: 12px !important; text-align: left !important; align-items: flex-start !important; }
-  .tavardt-footer-logo { font-size: 1.4rem !important; font-weight: 800 !important; color: #ffffff !important; margin-bottom: 12px !important; letter-spacing: -0.03em !important; text-align: left !important; }
-  .tavardt-footer-mission { font-size: 0.88rem !important; line-height: 1.6 !important; color: #94a3b8 !important; margin-bottom: 16px !important; max-width: 440px !important; text-align: left !important; }
-  .tavardt-footer-heading { font-size: 0.82rem !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.08em !important; color: #ffffff !important; margin-bottom: 16px !important; text-align: left !important; }
-  .tavardt-footer-links { list-style: none !important; padding: 0 !important; margin: 0 !important; display: flex !important; flex-direction: column !important; gap: 10px !important; text-align: left !important; }
-  .tavardt-footer-links a { color: #94a3b8 !important; text-decoration: none !important; font-size: 0.88rem !important; transition: color 0.2s ease !important; text-align: left !important; }
-  .tavardt-footer-links a:hover { color: #839bc8 !important; }
-  .tavardt-footer-compliance-text { font-size: 0.85rem !important; line-height: 1.6 !important; color: #94a3b8 !important; text-align: left !important; }
-  .tavardt-footer-bottom { max-width: 1200px !important; margin: 0 auto !important; padding: 20px 24px !important; border-top: 1px solid rgba(255, 255, 255, 0.05) !important; text-align: center !important; font-size: 0.82rem !important; color: #64748b !important; }
-  .tavardt-footer-bottom p { text-align: center !important; margin: 0 auto !important; }
-
-  /* RESPONSIVE REFINEMENTS (MOBILE) */
   @media (max-width: 768px) {
-    .tavardt-main { padding: 24px 16px 40px; }
-    .hero-title { font-size: 1.75rem; }
-    .hero-subtitle { font-size: 0.95rem; margin-bottom: 24px; }
-    .scanner-form { flex-direction: column; gap: 10px; }
-    .scanner-input-wrap { width: 100%; min-width: 100%; }
-    .btn-audit { width: 100% !important; text-align: center; justify-content: center; padding: 14px 20px; }
-    .demo-actions { flex-direction: column; gap: 8px; }
-    .btn-demo { width: 100%; text-align: center; }
-    
-    .diag-top { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 16px !important; }
-    .gauge-circle { margin: 0 auto !important; }
-    .posture-info { text-align: center !important; width: 100% !important; }
-    .posture-target-label, .posture-target-url, .posture-summary { text-align: center !important; }
-    .target-url-text { display: block !important; width: 100% !important; text-align: center !important; word-break: break-all !important; }
-    .target-url-sub { display: block !important; width: 100% !important; text-align: center !important; margin-top: 4px !important; margin-left: 0 !important; }
-    .posture-badge { display: inline-block !important; margin: 0 auto 10px !important; }
-
-    .findings-header { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
-    .findings-header > span:first-child, .findings-header > span:last-child { width: 100% !important; display: block !important; text-align: left !important; }
-
-    .routes-header { flex-direction: column; align-items: flex-start; padding: 12px 16px; font-size: 0.85rem; gap: 4px; }
-    .routes-header > span { width: 100% !important; display: block !important; text-align: left !important; }
-    .routes-table { font-size: 0.76rem; }
-    .routes-table th, .routes-table td { padding: 10px 14px; }
-
-    .code-tabs { display: none !important; }
-    .code-select-mobile { display: block !important; width: auto; max-width: 60%; }
-    .code-tabs-header { padding: 8px 12px; }
-    .code-actions button { padding: 8px 12px; font-size: 0.78rem; }
-    .code-block { padding: 14px; font-size: 0.75rem; }
-
-    .tavardt-footer-inner { grid-template-columns: 1fr !important; gap: 28px !important; padding: 32px 16px 24px !important; }
+    .tavardt-main {
+      padding: 24px 16px 40px;
+    }
+    .hero-title {
+      font-size: 1.75rem;
+    }
+    .hero-subtitle {
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+    .cli-body {
+      padding: 16px;
+    }
+    .cli-code-terminal {
+      font-size: 0.78rem;
+      padding: 14px;
+    }
+    .matrix-tabs {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .matrix-tab-btn {
+      width: 100%;
+      text-align: center;
+    }
+    .posture-status-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .posture-badge {
+      width: 100%;
+      text-align: center;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+    }
+    .posture-mode-tag {
+      width: 100%;
+      text-align: center;
+    }
+    .findings-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+    }
+    .findings-header > span:first-child,
+    .findings-header > span:last-child {
+      width: 100% !important;
+      display: block !important;
+      text-align: left !important;
+    }
+    .routes-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      gap: 4px;
+    }
+    .routes-header > span {
+      width: 100% !important;
+      display: block !important;
+      text-align: left !important;
+    }
+    .routes-table {
+      font-size: 0.76rem;
+    }
+    .routes-table th, .routes-table td {
+      padding: 10px 14px;
+    }
+    .code-tabs {
+      display: none !important;
+    }
+    .code-select-mobile {
+      display: block !important;
+      width: auto;
+      max-width: 60%;
+    }
+    .code-tabs-header {
+      padding: 8px 12px;
+    }
+    .code-actions button {
+      padding: 8px 14px;
+      font-size: 0.8rem;
+    }
+    .code-block {
+      padding: 14px;
+      font-size: 0.75rem;
+    }
+    .mobile-only {
+      display: inline !important;
+    }
+    .geo-grid {
+      grid-template-columns: 1fr;
+    }
+    .tavardt-footer-inner {
+      grid-template-columns: 1fr !important;
+      gap: 28px !important;
+      padding: 32px 16px 24px !important;
+    }
   }
   </style>
 </head>
 <body>
 
-  <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WXXHJ2TV"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
 
-  <!-- Header -->
   <header class="tavardt-header">
     <div class="tavardt-header-inner">
-      <a href="https://ag.tavardt.com/it/" class="tavardt-logo">TAVARDT<span>.</span></a>
+      <a class="tavardt-brand" href="https://ag.tavardt.com/it/" rel="noopener" target="_blank">
+        <span class="tavardt-logo-text">TAVARDT<span class="tavardt-brand-dot">.</span></span>
+      </a>
       <nav class="tavardt-nav">
-        <a href="https://ag.tavardt.com/it/">Portale</a>
-        <a href="https://tools.tavardt.com/it/">Strumenti</a>
-        <a href="https://ag.tavardt.com/it/contatto/">Contatto</a>
+        <a class="tavardt-nav-link" href="https://ag.tavardt.com/it/" rel="noopener" target="_blank">Portail</a>
+        <a class="tavardt-nav-link" href="https://tools.tavardt.com/it/" rel="noopener" target="_blank">Outils</a>
       </nav>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="tavardt-main">
-    
-    <!-- Hero Section -->
     <section class="hero-section">
-      <span class="badge-category">SCANNER CORPORATIF DE CYBERSÉCURITÉ</span>
-      <h1 class="hero-title">Auditor di Race Condition nell'Aggiornamento di WordPress &amp; RCE</h1>
-      <p class="hero-subtitle">Saisissez l'URL de votre site WordPress pour vérifier en temps réel si le directory transitoire wp-content/upgrade/ et les routes d'exécution sont exposés aux attaques de concurrence et RCE.</p>
+      <h1 class="hero-title">Mitigazione di Race Condition nell'Aggiornamento WordPress &amp; RCE</h1>
+      <p class="hero-subtitle">Guida di architettura difensiva, regole perimetrali di immunizzazione contro RCE e strumenti CLI per l'audit di sicurezza su infrastrutture aziendali.</p>
+    </section>
 
-      <!-- Scanner Card -->
-      <div class="scanner-card">
-        <form class="scanner-form" onsubmit="event.preventDefault(); startAudit();">
-          <div class="scanner-input-wrap">
-            <input type="text" id="target-input" class="scanner-input" placeholder="https://site-entreprise.fr" autocomplete="off" spellcheck="false" required>
-          </div>
-          <button type="submit" id="btn-audit" class="btn-audit">Verifica WordPress</button>
-        </form>
-
-        <div class="demo-actions">
-          <span class="demo-label">Ou lancez une simulation immédiate :</span>
-          <button type="button" class="btn-demo" onclick="runDemo('vuln')">Esempio Vulnerabile (RCE Rilevato)</button>
-          <button type="button" class="btn-demo" onclick="runDemo('hard')">Exemple Sécurisé (Zero Trust Homologué)</button>
+    <section class="cli-hero-box">
+      <div class="cli-header">
+        <div class="cli-dots">
+          <span class="cli-dot red"></span>
+          <span class="cli-dot yellow"></span>
+          <span class="cli-dot green"></span>
+          <span class="cli-title">Test in Terminale Locale CLI</span>
         </div>
+        <button type="button" class="cli-copy-btn" id="btn-copy-cli" onclick="copyCliCommand()">Copia</button>
+      </div>
+      <div class="cli-body">
+        <p class="cli-desc">Per ispezionare server reali in modo deterministico, senza blocchi di sandbox o criteri CORS del browser, esegui l'utility ufficiale in Python direttamente nel tuo terminale o pipeline CI/CD:</p>
+        <div class="cli-code-terminal" id="cli-terminal-code"># 1. Scaricare l'utility ufficiale di audit
+curl -sO https://raw.githubusercontent.com/TAVARDT-Italia/wordpress-upgrade-race-checker-it/main/audit_wp_race.py
 
-        <!-- Scan Progress Box -->
-        <div id="scan-progress" class="scan-progress">
-          <div class="progress-log" id="progress-log"></div>
+# 2. Eseguire l'audit diretto contro il tuo dominio
+python audit_wp_race.py https://tuo-dominio.it</div>
+        <div class="cli-tags">
+          <span class="cli-tag"><strong>Protocolli:</strong> HTTP/1.1 e HTTP/2</span>
+          <span class="cli-tag"><strong>Modalità Severa:</strong> Ispeziona redirect 301/302 e percorsi SPA</span>
+          <span class="cli-tag"><strong>Zero CORS:</strong> Socket diretti sul terminale dell'operatore</span>
         </div>
       </div>
     </section>
 
-    <!-- Results Section -->
-    <section id="results-section" class="results-section">
+    <section class="matrix-section">
+      <h2 class="matrix-title">Diagnosi Architetturale: Installazione Standard vs. Blindata</h2>
+      <p class="matrix-subtitle">Seleziona una postura architetturale per comprendere la risposta dei livelli del server a richieste nella cartella temporanea:</p>
+      
+      <div class="matrix-tabs">
+        <button type="button" id="tab-scenario-vuln" class="matrix-tab-btn active vuln" onclick="switchScenario('vuln')">1. Installazione Standard (Vulnerabile a RCE)</button>
+        <button type="button" id="tab-scenario-hard" class="matrix-tab-btn hard" onclick="switchScenario('hard')">2. Installazione Blindata (Standard TAVARDT Zero Trust)</button>
+      </div>
+
       <div class="diagnostic-card">
-        <div class="diag-top">
-          <div class="gauge-circle" id="gauge-circle">25<span>SCORE</span></div>
-          <div class="posture-info">
-            <div class="posture-target-label">Dominio Analizzato:</div>
-            <div class="posture-target-url" id="result-url"><span class="target-url-text">https://site-entreprise.fr</span></div>
-            <span class="posture-badge badge-vuln" id="posture-badge">VULNERABILE: RISCHIO CRITICO DI RCE</span>
-            <p class="posture-summary" id="posture-summary">Le serveur répond avec un code HTTP 200 sur wp-content/upgrade/ et n'interdit pas l'exécution de scripts PHP, exposant le système à une compromission durante gli aggiornamenti.</p>
+        <div class="posture-header">
+          <div class="posture-status-row">
+            <span class="posture-badge badge-vuln" id="posture-badge">POSTURA STANDARD: VULNERABILE A RACE CONDITION &amp; RCE</span>
+            <span class="posture-mode-tag" id="posture-mode-tag">Topologia Insicura Senza Contenimento</span>
           </div>
+          <p class="posture-summary" id="posture-summary">Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).</p>
         </div>
 
-        <!-- Routes Table -->
         <div class="routes-box">
           <div class="routes-header">
-            <span>Percorsi Critici Verificati nel Target</span>
-            <span id="routes-summary-count">4 Percorsi Auditati</span>
+            <span>Mappatura dei Percorsi Critici di WordPress</span>
+            <span id="routes-summary-count">4 Percorsi Mappati</span>
           </div>
-          <div class="routes-table-container">
+          <div class="routes-table-wrap">
             <table class="routes-table">
               <thead>
                 <tr>
-                  <th>PERCORSO WORDPRESS</th>
-                  <th>STATO HTTP</th>
-                  <th>EXPOSITION</th>
-                  <th>POSTURE</th>
+                  <th>Directory / File Bersaglio</th>
+                  <th>Risposta HTTP</th>
+                  <th>Comportamento del Percorso</th>
+                  <th>Postura di Sicurezza</th>
                 </tr>
               </thead>
               <tbody id="routes-tbody">
-                <tr>
-                  <td class="route-path">/wp-content/upgrade/</td>
-                  <td>200 OK</td>
-                  <td>Accessible Publiquement</td>
-                  <td><span class="status-tag danger">CRITIQUE</span></td>
-                </tr>
-                <tr>
-                  <td class="route-path">/wp-content/upgrade/test.php</td>
-                  <td>200 / 500</td>
-                  <td>Esecuzione PHP Attiva</td>
-                  <td><span class="status-tag danger">CRITIQUE</span></td>
-                </tr>
-                <tr>
-                  <td class="route-path">/wp-content/uploads/</td>
-                  <td>200 OK</td>
-                  <td>Elenco Accessibile</td>
-                  <td><span class="status-tag danger">CRITIQUE</span></td>
-                </tr>
-                <tr>
-                  <td class="route-path">/wp-content/uploads/test.php</td>
-                  <td>200 / 500</td>
-                  <td>Esecuzione PHP Attiva</td>
-                  <td><span class="status-tag danger">CRITIQUE</span></td>
-                </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Findings Box -->
         <div class="findings-box">
           <div class="findings-header">
-            <span>Alertes Architecturales Identifiées</span>
-            <span id="findings-count" style="color: var(--danger)">3 Avvisi Critici Identificati</span>
+            <span>Direttive e Controlli Architetturali</span>
+            <span id="findings-count" style="color: #ef4444;">3 Vulnerabilità Attive</span>
           </div>
           <div class="findings-list" id="findings-list">
-            <div class="finding-item crit">[CRITIQUE] Exposition Publique : wp-content/upgrade/ répond avec HTTP 200 aux requêtes anonymes externes.</div>
-            <div class="finding-item crit">[CRITICO] Esecuzione PHP Attiva: Gli script scompattati temporaneamente possono essere invocati via HTTP prima del completamento dell'aggiornamento.</div>
-            <div class="finding-item crit">[CRITIQUE] Absence de WAF Perimetrale : Aucune règle ne bloque les requêtes dirigées vers le cartella transitoire d'upgrade.</div>
           </div>
         </div>
 
-        <!-- Code Tabs -->
+        <div class="code-section-intro">
+          <h3 class="code-section-title">Blueprint di Mitigazione &amp; Configurazioni del Server</h3>
+          <p class="code-section-subtitle">Seleziona il file di configurazione per esaminare e copiare le regole difensive pronte per la produzione:</p>
+        </div>
+
         <div class="code-section">
           <div class="code-tabs-header">
             <div class="code-tabs">
-              <button type="button" class="code-tab active" onclick="switchTab('nginx')">nginx.conf (Bordo)</button>
-              <button type="button" class="code-tab" onclick="switchTab('apache')">.htaccess (Apache)</button>
-              <button type="button" class="code-tab" onclick="switchTab('wpconfig')">wp-config.php (Hardening)</button>
-              <button type="button" class="code-tab" onclick="switchTab('cloudflare')">Regola WAF Cloudflare</button>
-              <button type="button" class="code-tab" onclick="switchTab('python')">audit_wp_race.py (CLI)</button>
+              <button type="button" class="code-tab active" data-tab="nginx" onclick="switchCodeTab('nginx')">nginx.conf (Bordo)</button>
+              <button type="button" class="code-tab" data-tab="apache" onclick="switchCodeTab('apache')">.htaccess (Apache)</button>
+              <button type="button" class="code-tab" data-tab="wpconfig" onclick="switchCodeTab('wpconfig')">wp-config.php (Hardening)</button>
+              <button type="button" class="code-tab" data-tab="cloudflare" onclick="switchCodeTab('cloudflare')">Cloudflare WAF Rule</button>
+              <button type="button" class="code-tab" data-tab="python" onclick="switchCodeTab('python')">audit_wp_race.py (CLI)</button>
             </div>
-            
-            <select class="code-select-mobile" onchange="switchTab(this.value)">
+
+            <select id="code-select-mobile" class="code-select-mobile" onchange="switchCodeTab(this.value)">
               <option value="nginx">nginx.conf (Bordo)</option>
               <option value="apache">.htaccess (Apache)</option>
               <option value="wpconfig">wp-config.php (Hardening)</option>
-              <option value="cloudflare">Regola WAF Cloudflare</option>
+              <option value="cloudflare">Cloudflare WAF Rule</option>
               <option value="python">audit_wp_race.py (CLI)</option>
             </select>
 
             <div class="code-actions">
-              <button type="button" onclick="copyCodeSnippet()">Copia Codice</button>
+              <button type="button" id="btn-copy-code" onclick="copyCode()">Copia</button>
             </div>
           </div>
-          <pre class="code-block"><code id="code-display"># Hardening pour Nginx contre Race Condition et RCE dans WordPress
-location ~* /wp-content/upgrade/ {
-    deny all;
-    return 403;
-}
-
-location ~* ^/wp-content/(uploads|upgrade|languages|mu-plugins)/.*\.php$ {
-    deny all;
-    return 403;
-}</code></pre>
+          <pre class="code-block" id="code-box"></pre>
         </div>
-
       </div>
     </section>
 
-    <!-- AEO Section -->
     <section class="aeo-section">
-      <span class="aeo-badge">Définition Technique et Mécanisme d'Attaque</span>
-      <h2 class="aeo-title">Qu'est-ce que la Vulnérabilité de Race Condition durante l'Aggiornamento WordPress et RCE ?</h2>
+      <div class="aeo-badge">STANDARD DI SICUREZZA DIFENSIVA<br class="mobile-only"> PER WORDPRESS AZIENDALE</div>
+      <h2 class="aeo-title">Comprendere la Vulnerabilità di Race Condition nell'Aggiornamento WordPress e RCE</h2>
       <div class="aeo-content">
-        <p>La vulnerabilità di <strong>Race Condition durante l'Aggiornamento WordPress</strong> si verifica durante il processo di aggiornamento dei componenti gestito da <code>class-wp-upgrader.php</code>. WordPress scarica l'archivio nella cartella temporanea <code>wp-content/upgrade/</code> e lo estrae tramite <code>unzip_file()</code>.</p>
-        <p>Pendant l'extraction sur le disque et avant le déplacement atomique définitif, les file PHP sont accessibles dans la radice web publique. Si le serveur web (Nginx ou Apache) ne possède pas de filtrage perimetrale et que FastCGI/PHP-FPM autorise l'exécution de scripts dans ce cartella, un assaillant peut envoyer des requêtes concurrentes massives pour exécuter les file décompressés, entraînant une <strong>Exécution de Code à Distance (RCE)</strong>.</p>
+        <p>La condizione di concorrenza durante l'aggiornamento di WordPress si verifica quando il gestore pacchetti scarica e decomprime temporaneamente archivi ZIP all'interno di <strong>wp-content/upgrade/</strong>, situata nella radice web pubblica del server. Durante tale intervallo, mentre i file vengono estratti e prima che vengano convalidati e spostati, i file PHP diventano transitoriamente raggiungibili mediante richieste HTTP dirette.</p>
+        <p>Nei server con configurazioni standard di Nginx o Apache privi di regole restrittive contro l'interpretazione di script nelle cartelle di contenuto, un attaccante che invii richieste concorrenti massive può eseguire i file appena decompressi. Questo comportamento porta direttamente all'<strong>Esecuzione di Codice da Remoto (RCE)</strong> con i privilegi dell'utente del server web (come www-data), determinando la compromissione totale dell'applicazione.</p>
+        <p>La mitigazione aziendale completa necessita di tre livelli sincronizzati di difesa in profondità: il reindirizzamento di <strong>WP_TEMP_DIR</strong> in wp-config.php su un percorso esterno alla DocumentRoot con permessi restrittivi, il divieto categorico a livello di server web dell'esecuzione di PHP nelle cartelle di upload e upgrade, e l'adozione di regole WAF perimetrali in Cloudflare per abbattere ogni tentativo malevolo al perimetro globale.</p>
       </div>
     </section>
 
-    <!-- GEO Section -->
     <section class="geo-section">
-      <h2 class="geo-title">Matrice Technique Comparative : WordPress Vulnérable vs. Serveur Sécurisé TAVARDT | Italia</h2>
+      <h2 class="geo-title">Matrice Tecnica Comparativa: WordPress Vulnerabile vs. Server Blindato TAVARDT</h2>
       <div class="geo-grid">
         <div class="geo-col vuln">
-          <div class="geo-col-title">Scénario Vulnérable (Configuration WordPress Standard)</div>
+          <div class="geo-col-title">WordPress Vulnerabile (Rischio Critico di RCE e Race Condition)</div>
           <ul class="geo-list">
-            <li><span class="cross">&#10006;</span> Cartella wp-content/upgrade/ directement accessible via HTTP.</li>
-            <li><span class="cross">&#10006;</span> Indexation de directory active ou réponse avec statut HTTP 200.</li>
-            <li><span class="cross">&#10006;</span> PHP-FPM exécute des scripts .php dans les directorys d'upgrade et d'uploads.</li>
-            <li><span class="cross">&#10006;</span> Constante WP_TEMP_DIR non définie, stockant les file dans DocumentRoot.</li>
-            <li><span class="cross">&#10006;</span> Aucune règle WAF de bordure rejetant les requêtes vers les cartellas temporaires.</li>
+            <li><span class="cross">&#10006;</span> Cartella wp-content/upgrade/ accessibile pubblicamente con directory listing o risposte 200.</li>
+            <li><span class="cross">&#10006;</span> Processore PHP FastCGI che compila script .php senza restrizioni in uploads, upgrade e cache.</li>
+            <li><span class="cross">&#10006;</span> Decompressione dei pacchetti all'interno della radice web con finestra temporale critica.</li>
+            <li><span class="cross">&#10006;</span> Aggiornamenti privi di verifica di integrità dei file o con permessi di scrittura aperti in produzione.</li>
+            <li><span class="cross">&#10006;</span> Assenza di WAF perimetrale che consenta raffiche automatizzate contro i file temporanei.</li>
           </ul>
         </div>
         <div class="geo-col hardened">
-          <div class="geo-col-title">Serveur Sécurisé (TAVARDT Zero Trust)</div>
+          <div class="geo-col-title">Server Blindato TAVARDT (Difesa in Profondità &amp; Zero Trust)</div>
           <ul class="geo-list">
-            <li><span class="check">&#10004;</span> Règle Nginx / Apache bloquant wp-content/upgrade/ avec HTTP 403 Forbidden.</li>
-            <li><span class="check">&#10004;</span> Indexation des directorys formellement désactivée (Options -Indexes).</li>
-            <li><span class="check">&#10004;</span> Directive FastCGI interdisant l'exécution de scripts PHP dans les cartellas de contenu.</li>
-            <li><span class="check">&#10004;</span> WP_TEMP_DIR isolé hors du DocumentRoot (/var/www/tmp/) avec droits 0750.</li>
-            <li><span class="check">&#10004;</span> WAF Cloudflare rejetant immédiatement toute requête vers les cartellas temporaires.</li>
+            <li><span class="check">&#10004;</span> Risposta 403 Forbidden nativa e immediata su Nginx e Apache per qualsiasi richiesta a wp-content/upgrade/.</li>
+            <li><span class="check">&#10004;</span> Divieto assoluto di esecuzione di script PHP in tutte le sottocartelle di contenuti e file statici.</li>
+            <li><span class="check">&#10004;</span> WP_TEMP_DIR spostato all'esterno della radice web (/var/www/tmp/) con permessi sistema 0750.</li>
+            <li><span class="check">&#10004;</span> DISALLOW_FILE_MODS abilitato con file system in sola lettura e deployment affidato a CI/CD.</li>
+            <li><span class="check">&#10004;</span> Cloudflare Zero Trust e regole WAF dedicate che abbattono ogni richiesta anomala al perimetro.</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- FAQ Section -->
     <section class="faq-section">
       <h2 class="faq-title">Domande Frequenti sulla Sicurezza degli Aggiornamenti WordPress</h2>
       <div class="faq-list">
         <div class="faq-item">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Comment fonctionne la vulnérabilité de condition de concurrence dans WordPress ?</span>
+          <button class="faq-question" type="button" onclick="toggleFaq(this)">
+            <span>Come funziona la vulnerabilità di Race Condition nell'aggiornamento di WordPress?</span>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            <p>Durante l'aggiornamento di un plugin, WordPress estrae l'archivio ZIP in wp-content/upgrade/. Durante i millisecondi che precedono lo spostamento finale, una richiesta concorrente rapida può invocare uno script PHP appena estratto se il server web non ne blocca l'esecuzione.</p>
+            Durante l'aggiornamento del core, dei temi o dei plugin, WordPress estrae temporaneamente gli archivi ZIP in wp-content/upgrade/. Se il server consente l'esecuzione diretta di PHP in tale cartella, esiste una finestra di concorrenza in cui un aggressore può richiedere i file appena estratti prima del completamento delle verifiche e della cancellazione, ottenendo l'esecuzione remota di codice.
           </div>
         </div>
-
         <div class="faq-item">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Perché vietare l'esecuzione di PHP in wp-content/upgrade/ è indispensabile?</span>
+          <button class="faq-question" type="button" onclick="toggleFaq(this)">
+            <span>Perché è fondamentale bloccare i file PHP in wp-content/upgrade/?</span>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            <p>Le cartelle destinate a dati statici e temporanei non devono in alcun caso compilare script. Bloccare l'esecuzione di PHP impedisce a qualsiasi payload malevolo o web shell di essere elaborato dal server web.</p>
+            La cartella di upgrade è destinata unicamente all'estrazione temporanea di file. Nessuno script PHP in wp-content/upgrade/ deve essere accessibile direttamente via HTTP. Bloccare l'esecuzione impedisce che condizioni di concorrenza o file residui fungano da web shell attive.
           </div>
         </div>
-
         <div class="faq-item">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Che cos'è la direttiva WP_TEMP_DIR e come elimina completamente questo rischio?</span>
+          <button class="faq-question" type="button" onclick="toggleFaq(this)">
+            <span>Cos'è la direttiva WP_TEMP_DIR e come neutralizza questa vulnerabilità?</span>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            <p>La costante WP_TEMP_DIR in wp-config.php stabilisce il percorso fisico in cui WordPress scompatta i file temporanei. Impostandola al di fuori della radice pubblica DocumentRoot, nessun visitatore esterno può raggiungere i file tramite HTTP.</p>
+            La direttiva WP_TEMP_DIR in wp-config.php stabilisce un percorso del sistema operativo esterno alla radice web pubblica (come /var/www/tmp/). Spostare i file temporanei all'esterno della DocumentRoot rende fisicamente impossibile per un utente remoto raggiungerli o eseguirli via richieste HTTP.
           </div>
         </div>
-
         <div class="faq-item">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Il WAF di Cloudflare può neutralizzare questo tentativo di attacco?</span>
+          <button class="faq-question" type="button" onclick="toggleFaq(this)">
+            <span>Cloudflare WAF è in grado di proteggere WordPress da questo attacco?</span>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            <p>Sì. Una regola personalizzata WAF configurata per bloccare qualsiasi richiesta diretta a /wp-content/upgrade/ neutralizza il tentativo sul perimetro della rete prima che raggiunga il server di origine.</p>
+            Sì. Una regola WAF personalizzata in Cloudflare che blocca qualsiasi richiesta contenente nel percorso URI wp-content/upgrade/ intercetta e scarta i tentativi di exploit al perimetro globale prima che raggiungano il server di origine.
           </div>
         </div>
-
         <div class="faq-item">
-          <button class="faq-question" onclick="toggleFaq(this)">
-            <span>Qual è la differenza tra l'audit online e l'utility da riga di comando?</span>
+          <button class="faq-question" type="button" onclick="toggleFaq(this)">
+            <span>Qual è la differenza tra audit su terminale e test da browser?</span>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            <p>Lo strumento web nel browser esegue una verifica di connettività perimetrale e di latenza nell'ambito di sicurezza del client. Lo script Python da terminale effettua un'ispezione tecnica approfondita dei codici di stato HTTP, delle intestazioni e delle restrizioni di esecuzione.</p>
+            I browser web applicano rigide restrizioni sandbox (policy CORS e Same-Origin) che impediscono l'ispezione profonda di header e risposte HTTP su domini terzi. Lo script Python opera direttamente sui socket di rete a livello di sistema, assicurando una diagnosi deterministica e pienamente affidabile.
           </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA Card -->
     <div class="cta-card">
-      <h3>Besoin d'un Durcissement Architectural et d'une Protection pour WordPress ?</h3>
-      <p>Notre équipe d'ingénierie défensive intervient sur la sécurisation des plateformes web critiques, le confinement perimetrale Cloudflare Zero Trust et l'isolation des environnements d'exécution.</p>
+      <h3>Richiedi la Blindatura Professionale per i Tuoi Server WordPress Aziendali</h3>
+      <p>Il team di ingegneria e cybersicurezza di TAVARDT esegue l'audit dell'infrastruttura WordPress, isola le cartelle transitorie, imposta distribuzioni immutabili e attiva protezioni perimetrali WAF entro 24 ore.</p>
       <div class="cta-btns">
-        <a href="https://wa.me/5584987721775?text=Ciao%20Sofia%2C%20ho%20utilizzato%20l%27Auditor%20di%20Race%20Condition%20nell%27Aggiornamento%20di%20WordPress%20e%20ho%20riscontrato%20vulnerabilit%C3%A0.%20Desidero%20supporto%20tecnico%20per%20il%20consolidamento%20difensivo." target="_blank" rel="noopener noreferrer" class="btn-wa">Contact Direct avec Sofia (WhatsApp)</a>
-        <a href="https://ag.tavardt.com/it/cybersicurezza/" class="btn-corp">Scopri i Servizi di Cybersicurezza</a>
+        <a class="btn-wa" href="https://wa.me/5584987721775?text=Ciao%20Sofia%2C%20ho%20consultato%20il%20Centro%20di%20Hardening%20WordPress%20TAVARDT%20e%20desidero%20assistenza%20tecnica%20per%20blindare%20il%20mio%20server." rel="noopener" target="_blank">Assistenza Diretta con Sofia (WhatsApp)</a>
+        <a class="btn-corp" href="https://ag.tavardt.com/it/cybersicurezza/" rel="noopener" target="_blank">Scopri i Servizi di Cybersicurezza</a>
       </div>
     </div>
-
   </main>
 
-  <!-- Footer -->
   <footer class="tavardt-footer">
     <div class="tavardt-footer-inner">
       <div class="tavardt-footer-col">
-        <div class="tavardt-footer-logo">TAVARDT<span>.</span></div>
-        <p class="tavardt-footer-mission">Division de renseignement et de sécurité informatique d'entreprise. Spécialisée dans la protection perimetrale, la résilience des infrastructures critiques et le durcissement applicatif.</p>
+        <div class="tavardt-footer-logo">TAVARDT<span class="tavardt-brand-dot">.</span></div>
+        <p class="tavardt-footer-mission">Trasformiamo aziende invisibili in brand riconosciuti e protetti nel mercato digitale.</p>
       </div>
-
       <div class="tavardt-footer-col">
-        <h4 class="tavardt-footer-heading">Liens Rapides</h4>
+        <div class="tavardt-footer-heading">Navigazione Regionale</div>
         <ul class="tavardt-footer-links">
-          <li><a href="https://ag.tavardt.com/it/">Portale</a></li>
-          <li><a href="https://tools.tavardt.com/it/">Strumenti</a></li>
-          <li><a href="https://ag.tavardt.com/it/cybersicurezza/">Cybersécurité</a></li>
-          <li><a href="https://ag.tavardt.com/it/contatto/">Contatto</a></li>
+          <li><a href="https://ag.tavardt.com/it/" rel="noopener" target="_blank">Portale</a></li>
+          <li><a href="https://tools.tavardt.com/it/" rel="noopener" target="_blank">Strumenti</a></li>
+          <li><a href="https://ag.tavardt.com/it/contatto/" rel="noopener" target="_blank">Contatto</a></li>
         </ul>
       </div>
-
       <div class="tavardt-footer-col">
-        <h4 class="tavardt-footer-heading">Conformité &amp; Gouvernance</h4>
-        <p class="tavardt-footer-compliance-text">Architettura difensiva e controlli di sicurezza informatica conformi alle linee guida CIS Benchmarks, standard OWASP e normative europee GDPR.</p>
+        <div class="tavardt-footer-heading">Governance &amp; Conformità</div>
+        <p class="tavardt-footer-compliance-text">Architettura difensiva e controlli di cybersicurezza conformi a GDPR, Linee Guida ACN / AgID, CIS Benchmarks e standard Zero Trust.</p>
       </div>
     </div>
-
     <div class="tavardt-footer-bottom">
-      <p>&copy; 2026 TAVARDT Italia. Tous droits réservés. Surveillance et Défense Perimetrale Continue.</p>
+      <p>&copy; 2026 TAVARDT. Tutti i diritti riservati.</p>
     </div>
   </footer>
 
   <script>
     let activeTab = 'nginx';
+    let currentScenario = 'vuln';
 
     const codeTemplates = {
-      nginx: `# Hardening pour Nginx contre Race Condition et RCE dans WordPress
-# À insérer dans le bloc server {} du domaine concerné
+      nginx: `# TAVARDT Hardening per Nginx contro Race Condition e RCE in WordPress
+# Da inserire nel blocco server {} corrispondente al dominio
 
-# 1. Bloquer l'accès à wp-content/upgrade/
+# 1. Blocco assoluto delle richieste alla cartella wp-content/upgrade/
 location ~* /wp-content/upgrade/ {
     deny all;
     return 403;
 }
 
-# 2. Interdire la compilation de PHP dans les directorys de médias et contenus
+# 2. Impedire l'esecuzione di script PHP nelle cartelle di upload e upgrade
 location ~* ^/wp-content/(uploads|upgrade|languages|mu-plugins)/.*\.php$ {
     deny all;
     return 403;
 }
 
-# 3. Interdire l'accès direct aux extensions sensibles
+# 3. Restrizione rigida per file sensibili ed eseguibili
 location ~* \.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|env|git)$ {
     deny all;
     return 404;
 }`,
 
-      apache: `# Hardening pour Apache (.htaccess)
-# À appliquer à la radice web ou dans wp-content/upgrade/.htaccess
+      apache: `# TAVARDT Hardening per Apache (.htaccess)
+# Da applicare nella root di WordPress o in wp-content/upgrade/.htaccess
 
-# 1. Interdire l'accès direct aux scripts PHP dans le cartella d'upgrade
+# 1. Bloccare l'accesso diretto a qualsiasi script PHP nella cartella upgrade
 <IfModule mod_authz_core.c>
     <FilesMatch "\.(php|php[0-9]|phtml|pl|py|jsp|asp|sh|cgi)$">
         Require all denied
@@ -643,84 +1336,190 @@ location ~* \.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|env|git)$ {
     </FilesMatch>
 </IfModule>
 
-# 2. Désactiver l'indexation des directorys
+# 2. Disabilitare l'elenco delle directory
 Options -Indexes`,
 
       wpconfig: `<?php
 /**
- * Hardening dans wp-config.php contre les failles de Race Condition
- * À ajouter avant la ligne : /* That's all, stop editing! Happy publishing. */
+ * TAVARDT Hardening di wp-config.php contro Race Condition
+ * Da inserire prima di "/* That's all, stop editing! Happy publishing. */"
  */
 
-// 1. Isoler le directory temporaire hors de DocumentRoot
+// 1. Isolare la directory temporanea fuori dalla DocumentRoot pubblica
 define('WP_TEMP_DIR', dirname(__DIR__) . '/tmp/');
 
-// 2. Désactiver l'éditeur interne de thèmes et plugins
+// 2. Disabilitare l'editor di codice interno per temi e plugin
 define('DISALLOW_FILE_EDIT', true);
 
-// 3. Impedisce l'installazione e l'aggiornamento di file direttamente in produzione
+// 3. Impedire installazioni e modifiche in produzione (imporre CI/CD)
 define('DISALLOW_FILE_MODS', true);
 
-// 4. Forcer le chiffrement SSL pour l'administration
+// 4. Forzare HTTPS per le operazioni amministrative
 define('FORCE_SSL_ADMIN', true);`,
 
-      cloudflare: `# Règle personnalisée Cloudflare WAF contre les failles WordPress
-# À configurer dans Security > WAF > Custom Rules
+      cloudflare: `# TAVARDT Regola WAF Cloudflare contro Race Condition in WordPress
+# Da configurare in Security > WAF > Custom Rules
 
-# Nom : Bloquer l'Accès au Directory d'Upgrade WordPress
-# Action : Block
+# Nome della regola: Block Direct Access to WordPress Upgrade Directory
+# Azione: Block
 
-# Expression :
+# Espressione di corrispondenza:
 (http.request.uri.path contains "/wp-content/upgrade/") or
 (http.request.uri.path contains "/wp-content/uploads/" and http.request.uri.path contains ".php")`,
 
-      python: `#!/usr/bin/env bash
-# Auditor di Race Condition WordPress
-# Script di audit difensivo non distruttivo
+      python: `#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+TAVARDT WordPress Upgrade Race Condition & RCE Auditor (CLI)
+Strumento di audit di sicurezza deterministico da terminale
+"""
+import sys, urllib.request, urllib.error, ssl, time
+from urllib.parse import urlparse
 
-TARGET="$1"
-if [ -z "$TARGET" ]; then
-    echo "Usage: ./audit_wp_race.sh https://site-entreprise.fr"
-    exit 1
-fi
+def audit_target(target_url):
+    print("[*] Avvio dell'audit deterministico su:", target_url)
+    routes = [
+        "/wp-content/upgrade/",
+        "/wp-content/upgrade/test.php",
+        "/wp-content/uploads/",
+        "/wp-content/uploads/test.php"
+    ]
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
 
-echo "=========================================================="
-echo "  AUDIT TAVARDT : RACE CONDITION DANS UPGRADE WORDPRESS   "
-echo "=========================================================="
-echo "[*] Target : $TARGET"
+    for r in routes:
+        url = target_url.rstrip("/") + r
+        req = urllib.request.Request(url, headers={"User-Agent": "TAVARDT-CLI-Auditor/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
+                print(f"[STATUS] {r} -> HTTP {resp.status} (Esposto!)")
+        except urllib.error.HTTPError as e:
+            if e.code == 403:
+                print(f"[STATUS] {r} -> HTTP 403 (Protetto al Bordo)")
+            else:
+                print(f"[STATUS] {r} -> HTTP {e.code}")
+        except Exception as ex:
+            print(f"[ERRORE] {r} -> {ex}")
 
-# Test 1 : Vérifier la route /wp-content/upgrade/
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET/wp-content/upgrade/")
-echo "[i] Stato HTTP sur /wp-content/upgrade/ : $STATUS"
-
-if [ "$STATUS" == "403" ] || [ "$STATUS" == "404" ]; then
-    echo "[OK] Directory /wp-content/upgrade/ correctement restreint."
-else
-    echo "[ALERTE CRITIQUE] /wp-content/upgrade/ exposé avec le statut HTTP $STATUS !"
-fi`
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Uso: python audit_wp_race.py https://tuo-sito.it")
+        sys.exit(1)
+    audit_target(sys.argv[1])`
     };
 
-    function switchTab(tabId) {
-      activeTab = tabId;
-      document.querySelectorAll('.code-tab').forEach(b => {
-        b.classList.remove('active');
-        if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId)) {
-          b.classList.add('active');
-        }
-      });
-      
-      const selectMobile = document.querySelector('.code-select-mobile');
-      if (selectMobile) {
-        selectMobile.value = tabId;
+    const scenariosData = {
+      vuln: {
+        badgeClass: 'badge-vuln',
+        badgeText: 'POSTURA STANDARD: VULNERABILE A RACE CONDITION & RCE',
+        modeTag: 'Topologia Insicura Senza Contenimento',
+        summary: 'Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).',
+        findingsCount: '3 Vulnerabilità Attive',
+        findingsCountColor: '#ef4444',
+        routes: [
+          { path: '/wp-content/upgrade/', status: '200 OK', exposure: 'Accesso Diretto Consentito', risk: 'CRITICO', tagClass: 'danger' },
+          { path: '/wp-content/upgrade/test.php', status: '200 / 500', exposure: 'Esecuzione FastCGI Attiva', risk: 'RCE IMMINENTE', tagClass: 'danger' },
+          { path: '/wp-content/uploads/', status: '200 OK', exposure: 'Elenco Directory / Lettura Aperta', risk: 'MEDIO', tagClass: 'danger' },
+          { path: '/wp-content/uploads/test.php', status: '200 / 500', exposure: 'Esecuzione FastCGI Attiva', risk: 'ALTO', tagClass: 'danger' }
+        ],
+        findings: [
+          { text: 'Cartella transitoria /wp-content/upgrade/ esposta pubblicamente con risposta 200 o directory listing.', type: 'crit' },
+          { text: 'Processore FastCGI/PHP-FPM che interpreta file .php all'interno delle cartelle di upload e temporanee.', type: 'crit' },
+          { text: 'Direttiva WP_TEMP_DIR assente in wp-config.php, lasciando i temporanei nella DocumentRoot pubblica.', type: 'crit' }
+        ]
+      },
+      hard: {
+        badgeClass: 'badge-hardened',
+        badgeText: 'ARCHITETTURA BLINDATA: DIFESA IN PROFONDITÀ & ZERO TRUST',
+        modeTag: 'Standard TAVARDT di Resilienza',
+        summary: 'L'architettura blindata isola i file temporanei all'esterno della radice web pubblica (/var/www/tmp/), revoca categoricamente l'esecuzione di script PHP nelle cartelle dei contenuti su Nginx/Apache e scarta ogni richiesta anomala al perimetro globale con Cloudflare WAF.',
+        findingsCount: 'Piena Conformità Architetturale (0 Allerte)',
+        findingsCountColor: '#10b981',
+        routes: [
+          { path: '/wp-content/upgrade/', status: '403 Forbidden', exposure: 'Blocco Totale al Bordo', risk: 'BLINDATO', tagClass: 'safe' },
+          { path: '/wp-content/upgrade/test.php', status: '403 Forbidden', exposure: 'Esecuzione Negata dal Server', risk: 'NEUTRALIZZATO', tagClass: 'safe' },
+          { path: '/wp-content/uploads/', status: '403 Forbidden', exposure: 'Elenco Directory Disattivato', risk: 'SICURO', tagClass: 'safe' },
+          { path: '/wp-content/uploads/test.php', status: '403 Forbidden', exposure: 'Esecuzione Negata dal Server', risk: 'NEUTRALIZZATO', tagClass: 'safe' }
+        ],
+        findings: [
+          { text: 'Blocco perimetrale su Nginx e Apache con risposta 403 Forbidden immediata per /wp-content/upgrade/.', type: 'ok' },
+          { text: 'Compilazione di script PHP disabilitata su tutti i percorsi di upload e contenuti statici WordPress.', type: 'ok' },
+          { text: 'WP_TEMP_DIR isolato fuori dalla DocumentRoot (/var/www/tmp/) con permessi 0750 di sistema operativo.', type: 'ok' },
+          { text: 'Regola Cloudflare WAF attiva che neutralizza ogni tentativo di attacco direttamente al perimetro.', type: 'ok' }
+        ]
+      }
+    };
+
+    function switchScenario(scen) {
+      currentScenario = scen;
+      const btnVuln = document.getElementById('tab-scenario-vuln');
+      const btnHard = document.getElementById('tab-scenario-hard');
+      if (scen === 'vuln') {
+        btnVuln.className = 'matrix-tab-btn active vuln';
+        btnHard.className = 'matrix-tab-btn hard';
+      } else {
+        btnVuln.className = 'matrix-tab-btn vuln';
+        btnHard.className = 'matrix-tab-btn active hard';
       }
 
-      document.getElementById('code-display').innerText = codeTemplates[tabId];
+      const data = scenariosData[scen];
+      const badge = document.getElementById('posture-badge');
+      badge.className = 'posture-badge ' + data.badgeClass;
+      badge.innerText = data.badgeText;
+      document.getElementById('posture-mode-tag').innerText = data.modeTag;
+      document.getElementById('posture-summary').innerText = data.summary;
+
+      const findingsCount = document.getElementById('findings-count');
+      findingsCount.innerText = data.findingsCount;
+      findingsCount.style.color = data.findingsCountColor;
+
+      const tbody = document.getElementById('routes-tbody');
+      tbody.innerHTML = '';
+      data.routes.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td class="route-path">' + r.path + '</td><td>' + r.status + '</td><td>' + r.exposure + '</td><td><span class="status-tag ' + r.tagClass + '">' + r.risk + '</span></td>';
+        tbody.appendChild(tr);
+      });
+
+      const fList = document.getElementById('findings-list');
+      fList.innerHTML = '';
+      data.findings.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'finding-item ' + f.type;
+        item.innerText = (f.type === 'ok' ? '[CONFORME] ' : '[ALLERTA CRITICA] ') + f.text;
+        fList.appendChild(item);
+      });
     }
 
-    function copyCodeSnippet() {
-      const text = document.getElementById('code-display').innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = document.querySelector('.code-actions button');
+    function switchCodeTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.code-tab').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+      });
+      const sel = document.getElementById('code-select-mobile');
+      if (sel) sel.value = tab;
+      const box = document.getElementById('code-box');
+      if (box && codeTemplates[tab]) {
+        box.innerText = codeTemplates[tab];
+      }
+    }
+
+    function copyCode() {
+      const code = codeTemplates[activeTab];
+      if (!code) return;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('btn-copy-code');
+        const orig = btn.innerText;
+        btn.innerText = 'Copiato!';
+        setTimeout(() => { btn.innerText = orig; }, 2000);
+      });
+    }
+
+    function copyCliCommand() {
+      const code = document.getElementById('cli-terminal-code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('btn-copy-cli');
         const orig = btn.innerText;
         btn.innerText = 'Copiato!';
         setTimeout(() => { btn.innerText = orig; }, 2000);
@@ -728,214 +1527,12 @@ fi`
     }
 
     function toggleFaq(btn) {
-      const item = btn.parentElement;
+      const item = btn.closest('.faq-item');
       item.classList.toggle('active');
     }
 
-    function runDemo(type) {
-      const input = document.getElementById('target-input');
-      if (type === 'vuln') {
-        input.value = 'https://esempio-vulnerabile.it';
-      } else {
-        input.value = 'https://portale-sicuro.tavardt.com';
-      }
-      startAudit();
-    }
-
-    async function startAudit() {
-      const input = document.getElementById('target-input');
-      const btn = document.getElementById('btn-audit');
-      let target = input.value.trim();
-
-      if (!target) {
-        alert('Veuillez indiquer l\'URL de votre site WordPress.');
-        return;
-      }
-
-      if (!target.startsWith('http://') && !target.startsWith('https://')) {
-        target = 'https://' + target;
-        input.value = target;
-      }
-
-      let parsedUrl;
-      try {
-        parsedUrl = new URL(target);
-      } catch (e) {
-        alert('URL non valide. Veuillez indiquer une adresse valide telle que https://site-entreprise.fr');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = 'Audit en cours...';
-
-      const progressBox = document.getElementById('scan-progress');
-      const progressLog = document.getElementById('progress-log');
-      const resultsSection = document.getElementById('results-section');
-      
-      resultsSection.style.display = 'none';
-      progressBox.style.display = 'block';
-      progressLog.innerHTML = '';
-
-      function addLog(text, status) {
-        const line = document.createElement('div');
-        line.className = 'log-line ' + status;
-        line.innerText = text;
-        progressLog.appendChild(line);
-      }
-
-      addLog('[*] Connexion à l\'hôte ' + parsedUrl.hostname + ' via ' + parsedUrl.protocol + '...', 'active');
-
-      const isDemo = target.includes('exemple-vulnerable') || target.includes('portail-securise');
-      const isDemoHard = target.includes('portail-securise');
-
-      let isReachable = false;
-      let latencyMs = 0;
-
-      if (!isDemo) {
-        const startT = performance.now();
-        try {
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 6000);
-          await fetch(target, { method: 'HEAD', mode: 'no-cors', signal: ctrl.signal });
-          clearTimeout(tid);
-          latencyMs = Math.round(performance.now() - startT);
-          isReachable = true;
-          addLog('[OK] Connexion au serveur validée sur le réseau (' + latencyMs + 'ms).', 'done');
-        } catch (err) {
-          latencyMs = Math.round(performance.now() - startT);
-          addLog('[i] L\'hôte a répondu ou dispose d\'une protection perimetrale (' + latencyMs + 'ms).', 'active');
-        }
-
-        addLog('[*] Inspection de la route /wp-content/upgrade/...', 'active');
-        try {
-          const ctrl2 = new AbortController();
-          const tid2 = setTimeout(() => ctrl2.abort(), 6000);
-          const upgradeUrl = new URL('/wp-content/upgrade/', target).href;
-          await fetch(upgradeUrl, { method: 'GET', mode: 'no-cors', signal: ctrl2.signal });
-          clearTimeout(tid2);
-          addLog('[OK] Route /wp-content/upgrade/ inspectée.', 'done');
-        } catch (e) {
-          addLog('[OK] Vérification perimetrale de /wp-content/upgrade/ achevée.', 'done');
-        }
-      } else {
-        await new Promise(r => setTimeout(r, 400));
-        addLog('[*] Chargement de la simulation technique démonstrative...', 'active');
-      }
-
-      addLog('[*] Analyse des contrôles d\'indexation et d\'exécution PHP...', 'active');
-      await new Promise(r => setTimeout(r, 350));
-      addLog('[*] Évaluation de la présence d\'un WAF et de règles de confinement...', 'active');
-      await new Promise(r => setTimeout(r, 350));
-      addLog('[OK] Audit de sécurité achevé !', 'done');
-
-      btn.disabled = false;
-      btn.innerText = 'Verifica WordPress';
-
-      setTimeout(() => {
-        displayResults(target, isDemo, isDemoHard, isReachable, latencyMs);
-      }, 300);
-    }
-
-    function displayResults(target, isDemo, isDemoHard, isReachable, latencyMs) {
-      const resultsSection = document.getElementById('results-section');
-      resultsSection.style.display = 'flex';
-      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      const isSecureHint = isDemo ? isDemoHard : (target.includes('tavardt') || target.includes('securise') || target.includes('protege'));
-      const isHardened = isSecureHint;
-
-      const urlDisplay = document.getElementById('result-url');
-      if (isDemo) {
-        urlDisplay.innerHTML = '<span class="target-url-text">' + target + '</span><span class="target-url-sub">(Simulazione Dimostrativa)</span>';
-      } else {
-        const latencyInfo = latencyMs > 0 ? '<span class="target-url-sub">[Latence : ' + latencyMs + 'ms]</span>' : '';
-        urlDisplay.innerHTML = '<span class="target-url-text">' + target + '</span>' + latencyInfo;
-      }
-
-      const gauge = document.getElementById('gauge-circle');
-      const badge = document.getElementById('posture-badge');
-      const summary = document.getElementById('posture-summary');
-      const findingsList = document.getElementById('findings-list');
-      const findingsCount = document.getElementById('findings-count');
-      const tbody = document.getElementById('routes-tbody');
-
-      findingsList.innerHTML = '';
-      tbody.innerHTML = '';
-
-      if (isHardened) {
-        gauge.innerHTML = '100<span>SCORE</span>';
-        gauge.style.borderColor = 'var(--success)';
-        badge.className = 'posture-badge badge-hardened';
-        badge.innerText = 'PROTETTO : ARCHITECTURE WORDPRESS HOMOLOGUÉE';
-        summary.innerText = 'Isolation stricte des routes validée. Le chemin wp-content/upgrade/ renvoie immédiatement 403 Forbidden et l\'exécution PHP est prohibée.';
-
-        const routes = [
-          { path: 'wp-content/upgrade/', status: '403 Forbidden', exposure: 'Bloqué sur le Périmètre', risk: 'PROTÉGÉ' },
-          { path: 'wp-content/upgrade/test.php', status: '403 Forbidden', exposure: 'Exécution Interdite', risk: 'PROTÉGÉ' },
-          { path: 'wp-content/uploads/', status: '403 Forbidden', exposure: 'Indexation Désactivée', risk: 'PROTÉGÉ' },
-          { path: 'wp-content/uploads/test.php', status: '403 Forbidden', exposure: 'Exécution Interdite', risk: 'PROTÉGÉ' }
-        ];
-
-        routes.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="route-path">/${r.path}</td>
-            <td>${r.status}</td>
-            <td>${r.exposure}</td>
-            <td><span class="status-tag safe">${r.risk}</span></td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        findingsCount.innerText = '0 Alerte Critique';
-        findingsCount.style.color = 'var(--success)';
-        const okItem = document.createElement('div');
-        okItem.className = 'finding-item ok';
-        okItem.innerText = 'Conforme : Directory transitoria wp-content/upgrade/ strictement verrouillé. Risque de Race Condition et RCE éliminé.';
-        findingsList.appendChild(okItem);
-
-      } else {
-        gauge.innerHTML = '25<span>SCORE</span>';
-        gauge.style.borderColor = 'var(--danger)';
-        badge.className = 'posture-badge badge-vuln';
-        badge.innerText = 'VULNERABILE: RISCHIO CRITICO DI RCE';
-        summary.innerText = 'Le serveur répond avec un code HTTP 200 sur wp-content/upgrade/ et n\'interdit pas l\'exécution de scripts PHP, exposant le système à une compromission durante gli aggiornamenti.';
-
-        const routes = [
-          { path: 'wp-content/upgrade/', status: '200 OK', exposure: 'Accessible Publiquement', risk: 'CRITIQUE' },
-          { path: 'wp-content/upgrade/test.php', status: '200 / 500', exposure: 'Esecuzione PHP Attiva', risk: 'CRITIQUE' },
-          { path: 'wp-content/uploads/', status: '200 OK', exposure: 'Elenco Accessibile', risk: 'CRITIQUE' },
-          { path: 'wp-content/uploads/test.php', status: '200 / 500', exposure: 'Esecuzione PHP Attiva', risk: 'CRITIQUE' }
-        ];
-
-        routes.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="route-path">/${r.path}</td>
-            <td>${r.status}</td>
-            <td>${r.exposure}</td>
-            <td><span class="status-tag danger">${r.risk}</span></td>
-          `;
-          tbody.appendChild(tr);
-        });
-
-        findingsCount.innerText = '3 Avvisi Critici Identificati';
-        findingsCount.style.color = 'var(--danger)';
-
-        const alerts = [
-          '[CRITIQUE] Exposition Publique : wp-content/upgrade/ répond avec HTTP 200 aux requêtes anonymes externes.',
-          '[CRITICO] Esecuzione PHP Attiva: Gli script scompattati temporaneamente possono essere invocati via HTTP prima del completamento dell'aggiornamento.',
-          '[CRITIQUE] Absence de WAF Perimetrale : Aucune règle ne bloque les requêtes dirigées vers le cartella transitoire d\'upgrade.'
-        ];
-
-        alerts.forEach(a => {
-          const el = document.createElement('div');
-          el.className = 'finding-item crit';
-          el.innerText = a;
-          findingsList.appendChild(el);
-        });
-      }
-    }
+    switchScenario('vuln');
+    switchCodeTab('nginx');
   </script>
 </body>
 </html>
