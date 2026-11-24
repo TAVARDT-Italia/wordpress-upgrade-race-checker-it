@@ -1,4 +1,4 @@
-# TAVARDT Italia : Centro di Hardening e Audit WordPress Upgrade Race Condition
+# Centro di Hardening e Audit WordPress Upgrade Race Condition
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-5b3cf5.svg)](https://tavardt-italia.github.io/wordpress-upgrade-race-checker-it/)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
@@ -89,3 +89,7 @@ Consulta la guida interattiva in produzione:
 ***
 
 &copy; 2026 TAVARDT Italia. Tutti i diritti riservati.
+
+***
+
+© 2026 TAVARDT. Tutti i diritti riservati.
