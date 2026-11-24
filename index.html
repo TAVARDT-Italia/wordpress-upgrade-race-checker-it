@@ -1420,8 +1420,7 @@ if __name__ == "__main__":
         routes: [
           { path: '/wp-content/upgrade/', status: '200 OK', exposure: 'Accesso Diretto Consentito', risk: 'CRITICO', tagClass: 'danger' },
           { path: '/wp-content/upgrade/test.php', status: '200 / 500', exposure: 'Esecuzione FastCGI Attiva', risk: 'RCE IMMINENTE', tagClass: 'danger' },
-          { path: '/wp-content/uploads/', status: '200 OK', exposure: 'Elenco Directory / Lettura Aperta', risk: 'MEDIO', tagClass: 'danger' },
-          { path: '/wp-content/uploads/test.php', status: '200 / 500', exposure: 'Esecuzione FastCGI Attiva', risk: 'ALTO', tagClass: 'danger' }
+          { path: '/wp-content/uploads/', status: '200 OK', exposure: 'Elenco Directory / Lettura Aperta', risk: 'MEDIO', tagClass: 'danger' }
         ],
         findings: [
           { text: 'Cartella transitoria /wp-content/upgrade/ esposta pubblicamente con risposta 200 o directory listing.', type: 'crit' },
@@ -1439,8 +1438,7 @@ if __name__ == "__main__":
         routes: [
           { path: '/wp-content/upgrade/', status: '403 Forbidden', exposure: 'Blocco Totale al Bordo', risk: 'BLINDATO', tagClass: 'safe' },
           { path: '/wp-content/upgrade/test.php', status: '403 Forbidden', exposure: 'Esecuzione Negata dal Server', risk: 'NEUTRALIZZATO', tagClass: 'safe' },
-          { path: '/wp-content/uploads/', status: '403 Forbidden', exposure: 'Elenco Directory Disattivato', risk: 'SICURO', tagClass: 'safe' },
-          { path: '/wp-content/uploads/test.php', status: '403 Forbidden', exposure: 'Esecuzione Negata dal Server', risk: 'NEUTRALIZZATO', tagClass: 'safe' }
+          { path: '/wp-content/uploads/', status: '403 Forbidden', exposure: 'Elenco Directory Disattivato', risk: 'SICURO', tagClass: 'safe' }
         ],
         findings: [
           { text: 'Blocco perimetrale su Nginx e Apache con risposta 403 Forbidden immediata per /wp-content/upgrade/.', type: 'ok' },
@@ -1508,7 +1506,7 @@ if __name__ == "__main__":
     function copyCode() {
       const code = codeTemplates[activeTab];
       if (!code) return;
-      navigator.clipboard.writeText(code).then(() => {
+      navigator.clipboard.writeText(code).catch(() => {}).then(() => {
         const btn = document.getElementById('btn-copy-code');
         const orig = btn.innerText;
         btn.innerText = 'Copiato!';
@@ -1518,7 +1516,7 @@ if __name__ == "__main__":
 
     function copyCliCommand() {
       const code = document.getElementById('cli-terminal-code').innerText;
-      navigator.clipboard.writeText(code).then(() => {
+      navigator.clipboard.writeText(code).catch(() => {}).then(() => {
         const btn = document.getElementById('btn-copy-cli');
         const orig = btn.innerText;
         btn.innerText = 'Copiato!';
