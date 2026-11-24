@@ -88,8 +88,4 @@ Consulta la guida interattiva in produzione:
 
 ***
 
-&copy; 2026 TAVARDT Italia. Tutti i diritti riservati.
-
-***
-
 © 2026 TAVARDT. Tutti i diritti riservati.
