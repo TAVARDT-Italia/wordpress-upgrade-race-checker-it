@@ -1107,7 +1107,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
             <span class="posture-badge badge-vuln" id="posture-badge">POSTURA STANDARD: VULNERABILE A RACE CONDITION &amp; RCE</span>
             <span class="posture-mode-tag" id="posture-mode-tag">Topologia Insicura Senza Contenimento</span>
           </div>
-          <p class="posture-summary" id="posture-summary">Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).</p>
+          <p class="posture-summary" id="posture-summary">Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all\'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).</p>
         </div>
 
         <div class="routes-box">
@@ -1176,9 +1176,9 @@ python audit_wp_race.py https://tuo-dominio.it</div>
       <div class="aeo-badge">STANDARD DI SICUREZZA DIFENSIVA<br class="mobile-only"> PER WORDPRESS AZIENDALE</div>
       <h2 class="aeo-title">Comprendere la Vulnerabilità di Race Condition nell'Aggiornamento WordPress e RCE</h2>
       <div class="aeo-content">
-        <p>La condizione di concorrenza durante l'aggiornamento di WordPress si verifica quando il gestore pacchetti scarica e decomprime temporaneamente archivi ZIP all'interno di <strong>wp-content/upgrade/</strong>, situata nella radice web pubblica del server. Durante tale intervallo, mentre i file vengono estratti e prima che vengano convalidati e spostati, i file PHP diventano transitoriamente raggiungibili mediante richieste HTTP dirette.</p>
+        <p>La condizione di concorrenza durante l'aggiornamento di WordPress si verifica quando il gestore pacchetti scarica e decomprime temporaneamente archivi ZIP all\'interno di <strong>wp-content/upgrade/</strong>, situata nella radice web pubblica del server. Durante tale intervallo, mentre i file vengono estratti e prima che vengano convalidati e spostati, i file PHP diventano transitoriamente raggiungibili mediante richieste HTTP dirette.</p>
         <p>Nei server con configurazioni standard di Nginx o Apache privi di regole restrittive contro l'interpretazione di script nelle cartelle di contenuto, un attaccante che invii richieste concorrenti massive può eseguire i file appena decompressi. Questo comportamento porta direttamente all'<strong>Esecuzione di Codice da Remoto (RCE)</strong> con i privilegi dell'utente del server web (come www-data), determinando la compromissione totale dell'applicazione.</p>
-        <p>La mitigazione aziendale completa necessita di tre livelli sincronizzati di difesa in profondità: il reindirizzamento di <strong>WP_TEMP_DIR</strong> in wp-config.php su un percorso esterno alla DocumentRoot con permessi restrittivi, il divieto categorico a livello di server web dell'esecuzione di PHP nelle cartelle di upload e upgrade, e l'adozione di regole WAF perimetrali in Cloudflare per abbattere ogni tentativo malevolo al perimetro globale.</p>
+        <p>La mitigazione aziendale completa necessita di tre livelli sincronizzati di difesa in profondità: il reindirizzamento di <strong>WP_TEMP_DIR</strong> in wp-config.php su un percorso esterno alla DocumentRoot con permessi restrittivi, il divieto categorico a livello di server web dell\'esecuzione di PHP nelle cartelle di upload e upgrade, e l'adozione di regole WAF perimetrali in Cloudflare per abbattere ogni tentativo malevolo al perimetro globale.</p>
       </div>
     </section>
 
@@ -1190,7 +1190,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
           <ul class="geo-list">
             <li><span class="cross">&#10006;</span> Cartella wp-content/upgrade/ accessibile pubblicamente con directory listing o risposte 200.</li>
             <li><span class="cross">&#10006;</span> Processore PHP FastCGI che compila script .php senza restrizioni in uploads, upgrade e cache.</li>
-            <li><span class="cross">&#10006;</span> Decompressione dei pacchetti all'interno della radice web con finestra temporale critica.</li>
+            <li><span class="cross">&#10006;</span> Decompressione dei pacchetti all\'interno della radice web con finestra temporale critica.</li>
             <li><span class="cross">&#10006;</span> Aggiornamenti privi di verifica di integrità dei file o con permessi di scrittura aperti in produzione.</li>
             <li><span class="cross">&#10006;</span> Assenza di WAF perimetrale che consenta raffiche automatizzate contro i file temporanei.</li>
           </ul>
@@ -1200,7 +1200,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
           <ul class="geo-list">
             <li><span class="check">&#10004;</span> Risposta 403 Forbidden nativa e immediata su Nginx e Apache per qualsiasi richiesta a wp-content/upgrade/.</li>
             <li><span class="check">&#10004;</span> Divieto assoluto di esecuzione di script PHP in tutte le sottocartelle di contenuti e file statici.</li>
-            <li><span class="check">&#10004;</span> WP_TEMP_DIR spostato all'esterno della radice web (/var/www/tmp/) con permessi sistema 0750.</li>
+            <li><span class="check">&#10004;</span> WP_TEMP_DIR spostato all\'esterno della radice web (/var/www/tmp/) con permessi sistema 0750.</li>
             <li><span class="check">&#10004;</span> DISALLOW_FILE_MODS abilitato con file system in sola lettura e deployment affidato a CI/CD.</li>
             <li><span class="check">&#10004;</span> Cloudflare Zero Trust e regole WAF dedicate che abbattono ogni richiesta anomala al perimetro.</li>
           </ul>
@@ -1217,7 +1217,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            Durante l'aggiornamento del core, dei temi o dei plugin, WordPress estrae temporaneamente gli archivi ZIP in wp-content/upgrade/. Se il server consente l'esecuzione diretta di PHP in tale cartella, esiste una finestra di concorrenza in cui un aggressore può richiedere i file appena estratti prima del completamento delle verifiche e della cancellazione, ottenendo l'esecuzione remota di codice.
+            Durante l'aggiornamento del core, dei temi o dei plugin, WordPress estrae temporaneamente gli archivi ZIP in wp-content/upgrade/. Se il server consente l\'esecuzione diretta di PHP in tale cartella, esiste una finestra di concorrenza in cui un aggressore può richiedere i file appena estratti prima del completamento delle verifiche e della cancellazione, ottenendo l\'esecuzione remota di codice.
           </div>
         </div>
         <div class="faq-item">
@@ -1226,7 +1226,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            La cartella di upgrade è destinata unicamente all'estrazione temporanea di file. Nessuno script PHP in wp-content/upgrade/ deve essere accessibile direttamente via HTTP. Bloccare l'esecuzione impedisce che condizioni di concorrenza o file residui fungano da web shell attive.
+            La cartella di upgrade è destinata unicamente all'estrazione temporanea di file. Nessuno script PHP in wp-content/upgrade/ deve essere accessibile direttamente via HTTP. Bloccare l\'esecuzione impedisce che condizioni di concorrenza o file residui fungano da web shell attive.
           </div>
         </div>
         <div class="faq-item">
@@ -1235,7 +1235,7 @@ python audit_wp_race.py https://tuo-dominio.it</div>
             <span class="faq-icon">+</span>
           </button>
           <div class="faq-answer">
-            La direttiva WP_TEMP_DIR in wp-config.php stabilisce un percorso del sistema operativo esterno alla radice web pubblica (come /var/www/tmp/). Spostare i file temporanei all'esterno della DocumentRoot rende fisicamente impossibile per un utente remoto raggiungerli o eseguirli via richieste HTTP.
+            La direttiva WP_TEMP_DIR in wp-config.php stabilisce un percorso del sistema operativo esterno alla radice web pubblica (come /var/www/tmp/). Spostare i file temporanei all\'esterno della DocumentRoot rende fisicamente impossibile per un utente remoto raggiungerli o eseguirli via richieste HTTP.
           </div>
         </div>
         <div class="faq-item">
@@ -1307,7 +1307,7 @@ location ~* /wp-content/upgrade/ {
     return 403;
 }
 
-# 2. Impedire l'esecuzione di script PHP nelle cartelle di upload e upgrade
+# 2. Impedire l\'esecuzione di script PHP nelle cartelle di upload e upgrade
 location ~* ^/wp-content/(uploads|upgrade|languages|mu-plugins)/.*\.php$ {
     deny all;
     return 403;
@@ -1414,7 +1414,7 @@ if __name__ == "__main__":
         badgeClass: 'badge-vuln',
         badgeText: 'POSTURA STANDARD: VULNERABILE A RACE CONDITION & RCE',
         modeTag: 'Topologia Insicura Senza Contenimento',
-        summary: 'Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).',
+        summary: 'Sui server con configurazione standard, la cartella transitoria /wp-content/upgrade/ rimane all\'interno della DocumentRoot pubblica ed è accessibile via HTTP. Gli script PHP decompressi durante gli aggiornamenti possono essere richiamati da aggressori prima del termine del processo, aprendo una finestra critica di Esecuzione di Codice da Remoto (RCE).',
         findingsCount: '3 Vulnerabilità Attive',
         findingsCountColor: '#ef4444',
         routes: [
@@ -1425,7 +1425,7 @@ if __name__ == "__main__":
         ],
         findings: [
           { text: 'Cartella transitoria /wp-content/upgrade/ esposta pubblicamente con risposta 200 o directory listing.', type: 'crit' },
-          { text: 'Processore FastCGI/PHP-FPM che interpreta file .php all'interno delle cartelle di upload e temporanee.', type: 'crit' },
+          { text: 'Processore FastCGI/PHP-FPM che interpreta file .php all\'interno delle cartelle di upload e temporanee.', type: 'crit' },
           { text: 'Direttiva WP_TEMP_DIR assente in wp-config.php, lasciando i temporanei nella DocumentRoot pubblica.', type: 'crit' }
         ]
       },
@@ -1433,7 +1433,7 @@ if __name__ == "__main__":
         badgeClass: 'badge-hardened',
         badgeText: 'ARCHITETTURA BLINDATA: DIFESA IN PROFONDITÀ & ZERO TRUST',
         modeTag: 'Standard TAVARDT di Resilienza',
-        summary: 'L'architettura blindata isola i file temporanei all'esterno della radice web pubblica (/var/www/tmp/), revoca categoricamente l'esecuzione di script PHP nelle cartelle dei contenuti su Nginx/Apache e scarta ogni richiesta anomala al perimetro globale con Cloudflare WAF.',
+        summary: 'L\'architettura blindata isola i file temporanei all\'esterno della radice web pubblica (/var/www/tmp/), revoca categoricamente l\'esecuzione di script PHP nelle cartelle dei contenuti su Nginx/Apache e scarta ogni richiesta anomala al perimetro globale con Cloudflare WAF.',
         findingsCount: 'Piena Conformità Architetturale (0 Allerte)',
         findingsCountColor: '#10b981',
         routes: [
